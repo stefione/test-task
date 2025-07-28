@@ -502,7 +502,7 @@ MonoBehaviour:
   _CardRotationFactor: 0.2
   _CardAnimationDuration: 1
   _CardBaseSortingOrder: 1
-  _UseHeightBasedSorting: 0
+  _UseHeightBasedSorting: 1
   _AnimHeightCurve:
     serializedVersion: 2
     m_Curve:

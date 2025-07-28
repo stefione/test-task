@@ -20,8 +20,8 @@ namespace TestTask.AceOfShadows
         {
             _cam = Camera.main;
 
-            _SceneController.FirstStackUpdatedEvent += OnFirstStackUpdatedEvent;
-            _SceneController.SecondStackUpdatedEvent += OnSecondStackUpdatedEvent;
+            _SceneController.FirstStackCountUpdatedEvent += OnFirstStackUpdatedEvent;
+            _SceneController.SecondStackCountUpdatedEvent += OnSecondStackUpdatedEvent;
             _SceneController.FirstStackPositionUpdatedEvent += OnFirstStackPositionUpdatedEvent;
             _SceneController.SecondStackPositionUpdatedEvent += OnSecondStackPositionUpdatedEvent;
             _SceneController.AnimationFinishedEvent += OnAnimationFinishedEvent;

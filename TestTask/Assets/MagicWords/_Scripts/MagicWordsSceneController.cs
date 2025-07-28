@@ -23,19 +23,20 @@ namespace TestTask.MagicWords
         {
             _downloader = new(_Timeout);
             _textureDownloadCount = 0;
-            _downloader.DownloadTextAsync(_Url, OnRemoteDownloadFinish,
-                error =>
-                {
-                    EventManager.Fire(new ShowMessagePopupEvent()
-                    {
-                        Title = "Error",
-                        Message = error
-                    });
-                },
+            _ = _downloader.DownloadTextAsync(_Url, OnRemoteDownloadFinish, HandleError,
                 progress =>
                 {
                     OnDownloadUpdateEvent(progress, false);
                 });
+        }
+
+        private void HandleError(string error)
+        {
+            EventManager.Fire(new ShowMessagePopupEvent()
+            {
+                Title = "Error",
+                Message = error
+            });
         }
 
         private void OnRemoteDownloadFinish(string result)
@@ -45,16 +46,12 @@ namespace TestTask.MagicWords
             {
                 foreach (var avatar in _remoteData.avatars)
                 {
-                    _downloader.DownloadImageAsync(avatar.url, result => OnTextureLoadingFinish(), error =>
-                    {
-                        EventManager.Fire(new ShowMessagePopupEvent()
-                        {
-                            Title = "Error",
-                            Message = error
-                        });
-                        OnTextureLoadingFinish();
-                    },
-                    progress=>
+                    _ = _downloader.DownloadImageAsync(avatar.url, result => OnTextureLoadingFinish(), error =>
+                      {
+                          HandleError(error);
+                          OnTextureLoadingFinish();
+                      },
+                    progress =>
                     {
                         float part = 1f / (float)_remoteData.avatars.Count;
                         OnDownloadUpdateEvent(part * progress, true);

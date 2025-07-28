@@ -23,8 +23,8 @@ namespace TestTask.AceOfShadows
         private List<SpriteRenderer> _cards = new();
         private Coroutine _animationCoroutine;
 
-        public event Action<int> FirstStackUpdatedEvent;
-        public event Action<int> SecondStackUpdatedEvent;
+        public event Action<int> FirstStackCountUpdatedEvent;
+        public event Action<int> SecondStackCountUpdatedEvent;
 
         public event Action<Vector3> FirstStackPositionUpdatedEvent;
         public event Action<Vector3> SecondStackPositionUpdatedEvent;
@@ -93,8 +93,8 @@ namespace TestTask.AceOfShadows
                 _cards.Add(card);
             }
 
-            FirstStackUpdatedEvent?.Invoke(_cards.Count);
-            SecondStackUpdatedEvent?.Invoke(0);
+            FirstStackCountUpdatedEvent?.Invoke(_cards.Count);
+            SecondStackCountUpdatedEvent?.Invoke(0);
 
             FirstStackPositionUpdatedEvent?.Invoke(_FirstStackPoint.position);
             SecondStackPositionUpdatedEvent?.Invoke(_SecondStackPoint.position);
@@ -108,7 +108,7 @@ namespace TestTask.AceOfShadows
 
             for (int i = cards.Count - 1; i >= 0; i--)
             {
-                FirstStackUpdatedEvent?.Invoke(i);
+                FirstStackCountUpdatedEvent?.Invoke(i);
                 int inverseIndex = cards.Count - 1 - i;
                 Vector3 targetPos = targetPoint.position;
 
@@ -126,7 +126,7 @@ namespace TestTask.AceOfShadows
                    });
 
                 targetRotation.z += rotationDelta;
-                SecondStackUpdatedEvent?.Invoke(inverseIndex + 1);
+                SecondStackCountUpdatedEvent?.Invoke(inverseIndex + 1);
 
                 yield return delay;
             }
@@ -139,7 +139,7 @@ namespace TestTask.AceOfShadows
             Vector3 targetRotation = Vector3.zero;
             for (int i = cards.Count - 1; i >= 0; i--)
             {
-                FirstStackUpdatedEvent?.Invoke(i);
+                FirstStackCountUpdatedEvent?.Invoke(i);
                 int inverseIndex = cards.Count - 1 - i;
                 Vector3 targetPos = targetPoint.position - Vector3.forward * cardHeight * inverseIndex;
                 Vector3 startPos = cards[i].transform.position;
@@ -160,7 +160,7 @@ namespace TestTask.AceOfShadows
                 cards[i].transform.eulerAngles = targetRotation;
 
                 targetRotation.z += rotationDelta;
-                SecondStackUpdatedEvent?.Invoke(inverseIndex + 1);
+                SecondStackCountUpdatedEvent?.Invoke(inverseIndex + 1);
             }
             AnimationFinishedEvent?.Invoke();
         }

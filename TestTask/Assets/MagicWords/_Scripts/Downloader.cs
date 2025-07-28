@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace TestTask.MagicWords
+namespace TestTask
 {
     public class Downloader
     {
@@ -18,7 +18,7 @@ namespace TestTask.MagicWords
             _timeout = timeout;
         }
 
-        public async void DownloadImageAsync(string url, Action<Texture2D> onTextureDownloaded, Action<string> onError, Action<float> onProgressUpdate = null)
+        public async Task DownloadImageAsync(string url, Action<Texture2D> onTextureDownloaded, Action<string> onError, Action<float> onProgressUpdate = null)
         {
             try
             {
@@ -41,23 +41,7 @@ namespace TestTask.MagicWords
                     var downloadActions = new List<Action<Texture2D>>() { onTextureDownloaded };
                     _pendingDownloadTextureActions.Add(url, downloadActions);
 
-                    while (!operation.isDone && Application.isPlaying)
-                    {
-                        onProgressUpdate?.Invoke(operation.webRequest.downloadProgress);
-                        await Task.Yield();
-                    }
-
-                    if (!Application.isPlaying)
-                    {
-                        return;
-                    }
-
-                    if (operation.webRequest.result != UnityWebRequest.Result.Success)
-                    {
-                        string error = $"Failed to download image at {url}: " + uwr.error;
-                        Error(url, onError, error);
-                        return;
-                    }
+                    await HandleRequest(operation, url, onProgressUpdate, onError);
 
                     Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
                     _textureCache.Add(url, texture);
@@ -76,7 +60,7 @@ namespace TestTask.MagicWords
             }
         }
 
-        public async void DownloadTextAsync(string url, Action<string> onDataDownloaded, Action<string> onError, Action<float> onProgressUpdate = null)
+        public async Task DownloadTextAsync(string url, Action<string> onDataDownloaded, Action<string> onError, Action<float> onProgressUpdate = null)
         {
             try
             {
@@ -85,23 +69,7 @@ namespace TestTask.MagicWords
                     request.timeout = _timeout;
                     var operation = request.SendWebRequest();
 
-                    while (!operation.isDone && Application.isPlaying)
-                    {
-                        onProgressUpdate?.Invoke(operation.webRequest.downloadProgress);
-                        await Task.Yield();
-                    }
-
-                    if (!Application.isPlaying)
-                    {
-                        return;
-                    }
-
-                    if (request.result != UnityWebRequest.Result.Success)
-                    {
-                        string error = $"Request Error: {request.error}";
-                        Error(url, onError, error);
-                        return;
-                    }
+                    await HandleRequest(operation, url, onProgressUpdate, onError);
 
                     onDataDownloaded?.Invoke(request.downloadHandler.text);
                 }
@@ -111,6 +79,38 @@ namespace TestTask.MagicWords
                 string exceptionMsg = $"Exception: {ex.Message}";
                 Error(url, onError, exceptionMsg);
                 throw ex;
+            }
+        }
+
+        private async Task HandleRequest(UnityWebRequestAsyncOperation operation, string url, Action<float> onProgressUpdate, Action<string> onError)
+        {
+            float time = _timeout;
+
+            while (!operation.isDone && Application.isPlaying && time > 0)
+            {
+                time -= Time.deltaTime;
+                onProgressUpdate?.Invoke(operation.webRequest.downloadProgress);
+                await Task.Yield();
+            }
+
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (!operation.isDone)
+            {
+                operation.webRequest.Abort();
+                string error = $"Request timeout {url}: " + operation.webRequest.error;
+                Error(url, onError, error);
+                return;
+            }
+
+            if (operation.webRequest.result != UnityWebRequest.Result.Success)
+            {
+                string error = $"Failed to download image at {url}: " + operation.webRequest.error;
+                Error(url, onError, error);
+                return;
             }
         }
 
