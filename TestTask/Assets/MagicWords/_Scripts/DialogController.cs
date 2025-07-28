@@ -52,14 +52,40 @@ namespace TestTask.MagicWords
 
         private void CreateSprites(Downloader downloader)
         {
+            //Clear unused sprites
+            Dictionary<string, Sprite> usedSprites = new();
+            foreach (var avatar in _remoteData.avatars)
+            {
+                string id = avatar.GetId();
+                if (_dialogSprites.TryGetValue(id, out var sprite))
+                {
+                    usedSprites.Add(id, sprite);
+                    _dialogSprites.Remove(id);
+                }
+            }
+
+            foreach (var sprite in _dialogSprites)
+            {
+                Destroy(sprite.Value);
+            }
+
+            _dialogSprites = usedSprites;
+
+            //Download or get textures and create new sprites
             foreach (var avatars in _remoteData.avatars)
             {
-                downloader.DownloadImageAsync(avatars.url, result =>
+                if (_dialogSprites.ContainsKey(avatars.GetId()))
                 {
-                    Sprite sprite = Sprite.Create(result, new Rect(0, 0, result.width, result.height), Vector2.one * 0.5f);
-                    _dialogSprites.Add(avatars.GetId(), sprite);
-                },
-                error=> {
+                    continue;
+                }
+
+                _ = downloader.DownloadImageAsync(avatars.url, result =>
+                  {
+                      Sprite sprite = Sprite.Create(result, new Rect(0, 0, result.width, result.height), Vector2.one * 0.5f);
+                      _dialogSprites.Add(avatars.GetId(), sprite);
+                  },
+                error =>
+                {
                     EventManager.Fire(new ShowMessagePopupEvent()
                     {
                         Title = "Error",
@@ -131,17 +157,8 @@ namespace TestTask.MagicWords
             SetupDialogData(_remoteData.dialogue[_dialogIndex]);
         }
 
-        private void CleanUp()
-        {
-            foreach (var sprite in _dialogSprites)
-            {
-                Destroy(sprite.Value);
-            }
-        }
-
         public void Close()
         {
-            CleanUp();
             gameObject.SetActive(false);
         }
     }
