@@ -1,4 +1,5 @@
 using PixPlays.Framework.Events;
+using System;
 using TestTask.MagicWords;
 using TMPro;
 using UnityEngine;
@@ -13,6 +14,8 @@ namespace TestTask.AceOfShadows
         [SerializeField] private TMP_Text _SecondStackCounterText;
         [SerializeField] private Vector2 _CounterOffset;
         [SerializeField] private AceOfShadowsSceneController _SceneController;
+        [SerializeField] private Button _StartButton;
+        [SerializeField] private TMP_InputField _AnimationDurationInput;
 
         private Camera _cam;
 
@@ -25,6 +28,30 @@ namespace TestTask.AceOfShadows
             _SceneController.FirstStackPositionUpdatedEvent += OnFirstStackPositionUpdatedEvent;
             _SceneController.SecondStackPositionUpdatedEvent += OnSecondStackPositionUpdatedEvent;
             _SceneController.AnimationFinishedEvent += OnAnimationFinishedEvent;
+            _StartButton.onClick.AddListener(OnStartButtonClick);
+            _AnimationDurationInput.onValueChanged.AddListener(OnAnimationDurationInputValueChange);
+            _AnimationDurationInput.text = _SceneController.CardAnimationDuration.ToString("F2");
+
+        }
+
+        private void OnAnimationDurationInputValueChange(string stringValue)
+        {
+            if(!float.TryParse(stringValue, out float value))
+            {
+                return;
+            }
+
+            if (value <= 0)
+            {
+                return;
+            }
+
+            _SceneController.UpdateAnimationDuration(value);
+        }
+
+        private void OnStartButtonClick()
+        {
+            _SceneController.SetupAndStart();
         }
 
         private void OnAnimationFinishedEvent()

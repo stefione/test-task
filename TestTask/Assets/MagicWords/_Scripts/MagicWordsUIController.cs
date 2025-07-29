@@ -12,6 +12,7 @@ namespace TestTask.MagicWords
 
         private void Awake()
         {
+            _DialogController.Close();
             _SceneController.OnRemoteDataDownloadFinishEvent += _SceneController_OnRemoteDataDownloadFinishEvent;
             _SceneController.OnDownloadUpdateEvent += _SceneController_OnDownloadUpdateEvent;
             _Slider.gameObject.SetActive(true);

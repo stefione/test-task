@@ -3040,7 +3040,7 @@
     "hlslDeclarationOverride": 0,
     "m_Hidden": false,
     "m_Value": {
-        "m_SerializedTexture": "{\"texture\":{\"fileID\":2800000,\"guid\":\"4785720cfe34c5e4e838b48ec52ca3ec\",\"type\":3}}",
+        "m_SerializedTexture": "",
         "m_Guid": ""
     },
     "isMainTexture": false,
@@ -5017,7 +5017,7 @@
     "m_ObjectId": "a93ec70254c6444b99e8b9340b366735",
     "m_Title": "Distort",
     "m_Position": {
-        "x": -4164.00048828125,
+        "x": -4164.0,
         "y": -1611.0
     }
 }
@@ -6525,8 +6525,8 @@
     "m_ObjectId": "e0cb0504c29e44eb938dd637ce86e78b",
     "m_Title": "Noise",
     "m_Position": {
-        "x": -1766.0001220703125,
-        "y": -153.00001525878907
+        "x": -1766.0,
+        "y": -153.0
     }
 }
 

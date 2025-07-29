@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+
 namespace TestTask.AceOfShadows
 {
     public class AceOfShadowsSceneController : MonoBehaviour
@@ -25,11 +27,11 @@ namespace TestTask.AceOfShadows
 
         public event Action<int> FirstStackCountUpdatedEvent;
         public event Action<int> SecondStackCountUpdatedEvent;
-
         public event Action<Vector3> FirstStackPositionUpdatedEvent;
         public event Action<Vector3> SecondStackPositionUpdatedEvent;
-
         public event Action AnimationFinishedEvent;
+
+        public float CardAnimationDuration => _CardAnimationDuration;
 
         private void Start()
         {
@@ -51,6 +53,11 @@ namespace TestTask.AceOfShadows
             }
         }
 
+        public void UpdateAnimationDuration(float value)
+        {
+            _CardAnimationDuration = value;
+        }
+
         public void SetupAndStart()
         {
             if (_animationCoroutine != null)
@@ -58,38 +65,39 @@ namespace TestTask.AceOfShadows
                 StopCoroutine(_animationCoroutine);
             }
 
-            SetupDeck(_CardContent, _FirstStackPoint, _CardCount, _CardHeight, _CardRotationFactor, _CardPrefab);
+            SetupDeck();
             if (_UseHeightBasedSorting)
             {
-                _animationCoroutine = StartCoroutine(Coroutine_ZAxisBasedAnimation(_cards, _SecondStackPoint, _CardAnimationDuration, _CardRotationFactor, _CardHeight));
+                _animationCoroutine = StartCoroutine(Coroutine_ZAxisBasedAnimation(_SecondStackPoint));
             }
             else
             {
-                _animationCoroutine = StartCoroutine(Coroutine_Animation(_cards, _CardBaseSortingOrder, _SecondStackPoint, _CardAnimationDuration, _CardRotationFactor));
+                _animationCoroutine = StartCoroutine(Coroutine_SortingBasedAnimation(_SecondStackPoint));
             }
         }
 
-        private void SetupDeck(Transform cardContent, Transform spawnPoint, int cardCount, float cardHeight, float cardRotationFactor, SpriteRenderer cardPrefab)
+        private void SetupDeck()
         {
-            foreach (Transform child in cardContent)
+            foreach (Transform child in _CardContent)
             {
                 Destroy(child.gameObject);
             }
             _cards.Clear();
 
             Vector3 rotation = Vector3.zero;
-            float rotationDelta = 360f / cardCount * cardRotationFactor;
-            for (int i = 0; i < cardCount; i++)
+            float rotationDelta = 360f / _CardCount * _CardRotationFactor;
+            for (int i = 0; i < _CardCount; i++)
             {
-                var card = Instantiate(cardPrefab, cardContent);
+                var card = Instantiate(_CardPrefab, _CardContent);
                 card.transform.eulerAngles = rotation;
                 rotation.z += rotationDelta;
+                float height = _CardHeight;
                 if (!_UseHeightBasedSorting)
                 {
-                    cardHeight = 0;
+                    height = 0;
                     card.sortingOrder = _CardBaseSortingOrder + i;
                 }
-                card.transform.position = spawnPoint.position - Vector3.forward * cardHeight * i;
+                card.transform.position = _FirstStackPoint.position - Vector3.forward * height * i;
                 _cards.Add(card);
             }
 
@@ -100,29 +108,29 @@ namespace TestTask.AceOfShadows
             SecondStackPositionUpdatedEvent?.Invoke(_SecondStackPoint.position);
         }
 
-        private IEnumerator Coroutine_Animation(List<SpriteRenderer> cards, int baseSortingOrder, Transform targetPoint, float delayTime, float cardRotationFactor)
+        private IEnumerator Coroutine_SortingBasedAnimation(Transform targetPoint)
         {
-            var delay = new WaitForSeconds(delayTime);
-            float rotationDelta = 360f / _cards.Count * cardRotationFactor;
+            var delay = new WaitForSeconds(_CardAnimationDuration);
+            float rotationDelta = 360f / _cards.Count * _CardRotationFactor;
             Vector3 targetRotation = Vector3.zero;
 
-            for (int i = cards.Count - 1; i >= 0; i--)
+            for (int i = _cards.Count - 1; i >= 0; i--)
             {
                 FirstStackCountUpdatedEvent?.Invoke(i);
-                int inverseIndex = cards.Count - 1 - i;
+                int inverseIndex = _cards.Count - 1 - i;
                 Vector3 targetPos = targetPoint.position;
 
-                int newSortOrder = baseSortingOrder + inverseIndex;
-                if (newSortOrder > cards[i].sortingOrder)
+                int newSortOrder = _CardBaseSortingOrder + inverseIndex;
+                if (newSortOrder > _cards[i].sortingOrder)
                 {
-                    cards[i].sortingOrder = newSortOrder;
+                    _cards[i].sortingOrder = newSortOrder;
                 }
 
                 Sequence seq = DOTween.Sequence();
-                seq.Join(cards[i].transform.DOMove(targetPos, delayTime))
-                   .Join(cards[i].transform.DORotate(targetRotation, delayTime)).OnComplete(() =>
+                seq.Join(_cards[i].transform.DOMove(targetPos, _CardAnimationDuration))
+                   .Join(_cards[i].transform.DORotate(targetRotation, _CardAnimationDuration)).OnComplete(() =>
                    {
-                       cards[i].sortingOrder = newSortOrder;
+                       _cards[i].sortingOrder = newSortOrder;
                    });
 
                 targetRotation.z += rotationDelta;
@@ -133,31 +141,31 @@ namespace TestTask.AceOfShadows
             AnimationFinishedEvent?.Invoke();
         }
 
-        private IEnumerator Coroutine_ZAxisBasedAnimation(List<SpriteRenderer> cards, Transform targetPoint, float delayTime, float cardRotationFactor, float cardHeight)
+        private IEnumerator Coroutine_ZAxisBasedAnimation(Transform targetPoint)
         {
-            float rotationDelta = 360f / _cards.Count * cardRotationFactor;
+            float rotationDelta = 360f / _cards.Count * _CardRotationFactor;
             Vector3 targetRotation = Vector3.zero;
-            for (int i = cards.Count - 1; i >= 0; i--)
+            for (int i = _cards.Count - 1; i >= 0; i--)
             {
                 FirstStackCountUpdatedEvent?.Invoke(i);
-                int inverseIndex = cards.Count - 1 - i;
-                Vector3 targetPos = targetPoint.position - Vector3.forward * cardHeight * inverseIndex;
-                Vector3 startPos = cards[i].transform.position;
-                Vector3 startRotation = cards[i].transform.eulerAngles;
+                int inverseIndex = _cards.Count - 1 - i;
+                Vector3 targetPos = targetPoint.position - Vector3.forward * _CardHeight * inverseIndex;
+                Vector3 startPos = _cards[i].transform.position;
+                Vector3 startRotation = _cards[i].transform.eulerAngles;
 
                 float lerp = 0;
                 while (lerp < 1)
                 {
                     Vector3 pos = Vector3.Lerp(startPos, targetPos, lerp);
                     pos.z -= _AnimHeightCurve.Evaluate(lerp);
-                    cards[i].transform.position = pos;
+                    _cards[i].transform.position = pos;
                     _cards[i].transform.eulerAngles = Vector3.Lerp(startRotation, targetRotation, lerp);
-                    lerp += Time.deltaTime * (1f / delayTime);
+                    lerp += Time.deltaTime * (1f / _CardAnimationDuration);
                     yield return null;
                 }
 
-                cards[i].transform.position = targetPos;
-                cards[i].transform.eulerAngles = targetRotation;
+                _cards[i].transform.position = targetPos;
+                _cards[i].transform.eulerAngles = targetRotation;
 
                 targetRotation.z += rotationDelta;
                 SecondStackCountUpdatedEvent?.Invoke(inverseIndex + 1);
