@@ -18,7 +18,6 @@ namespace TestTask.MagicWords
         [SerializeField] private Sprite _AvatarPlaceholder;
 
         private RemoteData _remoteData;
-
         private Dictionary<string, Sprite> _dialogSprites = new();
         private int _dialogIndex;
         private bool _avatarPositionSwitch;
@@ -30,10 +29,10 @@ namespace TestTask.MagicWords
             _NextButton.onClick.AddListener(OnNextButtonClick);
         }
 
-        public void SetData(RemoteData remoteData, Downloader downloader)
+        public void SetData(RemoteData remoteData, Dictionary<string, Texture2D> avatarTextures)
         {
             _remoteData = remoteData;
-            CreateSprites(downloader);
+            CreateSprites(avatarTextures);
             FormatTextForEmojis();
 
             _dialogIndex = 0;
@@ -46,21 +45,25 @@ namespace TestTask.MagicWords
         {
             foreach (var i in _remoteData.dialogue)
             {
+                //Replace "{something}" with "<sprite name=something>"
                 i.text = Regex.Replace(i.text, @"\{(.*?)\}", "<sprite name=$1>");
             }
         }
 
-        private void CreateSprites(Downloader downloader)
+        private void CreateSprites(Dictionary<string, Texture2D> avatarTextures)
         {
-            //Clear unused sprites
             Dictionary<string, Sprite> usedSprites = new();
-            foreach (var avatar in _remoteData.avatars)
+            foreach (var textureData in avatarTextures)
             {
-                string id = avatar.GetId();
-                if (_dialogSprites.TryGetValue(id, out var sprite))
+                if (_dialogSprites.TryGetValue(textureData.Key, out var dialogSprite))
                 {
-                    usedSprites.Add(id, sprite);
-                    _dialogSprites.Remove(id);
+                    usedSprites.Add(textureData.Key, dialogSprite);
+                    _dialogSprites.Remove(textureData.Key);
+                }
+                else
+                {
+                    Sprite sprite = Sprite.Create(textureData.Value, new Rect(0, 0, textureData.Value.width, textureData.Value.height), Vector2.one * 0.5f);
+                    usedSprites.Add(textureData.Key, sprite);
                 }
             }
 
@@ -70,29 +73,6 @@ namespace TestTask.MagicWords
             }
 
             _dialogSprites = usedSprites;
-
-            //Download or get textures and create new sprites
-            foreach (var avatars in _remoteData.avatars)
-            {
-                if (_dialogSprites.ContainsKey(avatars.GetId()))
-                {
-                    continue;
-                }
-
-                _ = downloader.DownloadImageAsync(avatars.url, result =>
-                  {
-                      Sprite sprite = Sprite.Create(result, new Rect(0, 0, result.width, result.height), Vector2.one * 0.5f);
-                      _dialogSprites.Add(avatars.GetId(), sprite);
-                  },
-                error =>
-                {
-                    EventManager.Fire(new ShowMessagePopupEvent()
-                    {
-                        Title = "Error",
-                        Message = error
-                    });
-                });
-            }
         }
 
         private void SetupDialogData(DialogData dialogData)
@@ -108,8 +88,7 @@ namespace TestTask.MagicWords
                 _NameText.alignment = TextAlignmentOptions.MidlineLeft;
                 _DialogText.alignment = TextAlignmentOptions.MidlineLeft;
 
-                string id = dialogData.name + AvatarPosition.left.ToString();
-                if (_dialogSprites.TryGetValue(id, out var sprite))
+                if (_dialogSprites.TryGetValue(dialogData.name, out var sprite))
                 {
                     _AvatarLeft.sprite = sprite;
                 }
@@ -125,8 +104,7 @@ namespace TestTask.MagicWords
                 _NameText.alignment = TextAlignmentOptions.MidlineRight;
                 _DialogText.alignment = TextAlignmentOptions.MidlineRight;
 
-                string id = dialogData.name + AvatarPosition.right.ToString();
-                if (_dialogSprites.TryGetValue(id, out var sprite))
+                if (_dialogSprites.TryGetValue(dialogData.name, out var sprite))
                 {
                     _AvatarRight.sprite = sprite;
                 }

@@ -1,7 +1,9 @@
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 using PixPlays.Framework.Events;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TestTask.MagicWords
@@ -9,20 +11,20 @@ namespace TestTask.MagicWords
     public class MagicWordsSceneController : MonoBehaviour
     {
         [SerializeField] private string _Url;
-        [SerializeField] private bool _PreDownload;
         [SerializeField] private int _Timeout;
 
         private RemoteData _remoteData;
         private Downloader _downloader;
-        private int _textureDownloadCount;
+        private HashSet<AvatarData> _textureDownloadFinishSet = new();
+        private Dictionary<string, Texture2D> _avatarTextures = new();
 
-        public event Action<RemoteData, Downloader> OnRemoteDataDownloadFinishEvent;
+        public event Action<RemoteData, Dictionary<string, Texture2D>> OnRemoteDataDownloadFinishEvent;
         public event Action<float, bool> OnDownloadUpdateEvent; //progress, additive
 
         private void Start()
         {
             _downloader = new(_Timeout);
-            _textureDownloadCount = 0;
+            _textureDownloadFinishSet.Clear();
             _ = _downloader.DownloadTextAsync(_Url, OnRemoteDownloadFinish, HandleError,
                 progress =>
                 {
@@ -41,39 +43,51 @@ namespace TestTask.MagicWords
 
         private void OnRemoteDownloadFinish(string result)
         {
+            _avatarTextures.Clear();
             _remoteData = JsonConvert.DeserializeObject<RemoteData>(result);
-            if (_PreDownload)
+            
+            if (!_remoteData.IsValid(HandleError))
             {
-                foreach (var avatar in _remoteData.avatars)
-                {
-                    _ = _downloader.DownloadImageAsync(avatar.url, result => OnTextureLoadingFinish(), error =>
-                      {
-                          HandleError(error);
-                          OnTextureLoadingFinish();
-                      },
-                    progress =>
-                    {
-                        float part = 1f / (float)_remoteData.avatars.Count;
-                        OnDownloadUpdateEvent(part * progress, true);
-                    });
-                }
+                return;
             }
-            else
+
+            foreach (var avatar in _remoteData.avatars)
             {
-                OnRemoteDataDownloadFinishEvent?.Invoke(_remoteData, _downloader);
+                _ = _downloader.DownloadImageAsync(avatar.url,
+                    result =>
+                    {
+                        OnTextureLoadingFinish(avatar, result);
+                    },
+                    error =>
+                    {
+                        HandleError(error);
+
+                        //Move on even if failed to download image. Can be removed to block the game if error is displayed
+                        OnTextureLoadingFinish(avatar, null);
+                    });
             }
         }
 
-        private void OnTextureLoadingFinish()
+        private void OnTextureLoadingFinish(AvatarData avatar, [CanBeNull] Texture2D texture)
         {
-            _textureDownloadCount++;
+            bool success = _textureDownloadFinishSet.Add(avatar);
+            
+            if (!success)
+            {
+                return;
+            }
 
-            float progress = (float)_textureDownloadCount / (float)_remoteData.avatars.Count;
+            if (texture != null)
+            {
+                _avatarTextures.TryAdd(avatar.name, texture);
+            }
+
+            float progress = (float)_textureDownloadFinishSet.Count / (float)_remoteData.avatars.Count;
             OnDownloadUpdateEvent(progress, false);
 
-            if (_textureDownloadCount == _remoteData.avatars.Count)
+            if (_textureDownloadFinishSet.Count == _remoteData.avatars.Count)
             {
-                OnRemoteDataDownloadFinishEvent?.Invoke(_remoteData, _downloader);
+                OnRemoteDataDownloadFinishEvent?.Invoke(_remoteData, _avatarTextures);
             }
         }
     }

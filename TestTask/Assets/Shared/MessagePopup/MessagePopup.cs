@@ -14,6 +14,7 @@ namespace TestTask
         [SerializeField] private float _AnimSpeed;
         [SerializeField] private Button _CloseButton;
         [SerializeField] private Button _BackgroundButton;
+        [SerializeField] private CanvasGroup _CanvasGroup;
 
         private Action _onClose;
         private void Awake()
@@ -29,6 +30,7 @@ namespace TestTask
 
         public void Open(string title, string message, Action onClose)
         {
+            _CanvasGroup.interactable = true;
             _onClose = onClose;
             gameObject.SetActive(true);
             _Title.text = title;
@@ -39,6 +41,7 @@ namespace TestTask
 
         public void Close()
         {
+            _CanvasGroup.interactable = false;
             _PanelTransform.DOScale(Vector3.zero, _AnimSpeed).SetEase(Ease.InBack).OnComplete(() =>
             {
                 gameObject.SetActive(false);

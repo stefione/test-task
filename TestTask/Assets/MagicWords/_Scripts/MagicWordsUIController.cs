@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,9 +29,9 @@ namespace TestTask.MagicWords
             }
         }
 
-        private void _SceneController_OnRemoteDataDownloadFinishEvent(RemoteData remoteData, Downloader downloader)
+        private void _SceneController_OnRemoteDataDownloadFinishEvent(RemoteData remoteData, Dictionary<string, Texture2D> textures)
         {
-            _DialogController.SetData(remoteData, downloader);
+            _DialogController.SetData(remoteData, textures);
             _Slider.gameObject.SetActive(false);
         }
     }

@@ -481,6 +481,7 @@ GameObject:
   - component: {fileID: 8987038702091244295}
   - component: {fileID: 90196353528182353}
   - component: {fileID: 3680081973375677504}
+  - component: {fileID: 8679755652414981165}
   m_Layer: 5
   m_Name: MessagePopup
   m_TagString: Untagged
@@ -532,9 +533,22 @@ MonoBehaviour:
   _Title: {fileID: 3105403712514384093}
   _Message: {fileID: 465216158242120648}
   _PanelTransform: {fileID: 4437945095482734149}
-  _AnimSpeed: 0.2
+  _AnimSpeed: 0.5
   _CloseButton: {fileID: 2643201575080032062}
   _BackgroundButton: {fileID: 6293953101311487604}
+  _CanvasGroup: {fileID: 8679755652414981165}
+--- !u!225 &8679755652414981165
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7916229655808702333}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &8660267275984813026
 GameObject:
   m_ObjectHideFlags: 0
